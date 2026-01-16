@@ -1,10 +1,11 @@
 import { AbstractOAuthService } from '@/modules/integration/oauth/services/abstract-oauth.service';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { QuickbooksOnlineCallbackDto } from '@/modules/integration/quickbooks-online/dtos';
 
 @Injectable()
 export class QuickbooksOnlineOAuthService
-  extends AbstractOAuthService
+  extends AbstractOAuthService<QuickbooksOnlineCallbackDto>
   implements OnModuleInit
 {
   constructor(private readonly configService: ConfigService) {
@@ -68,5 +69,9 @@ export class QuickbooksOnlineOAuthService
       state: 'state', // TODO: add a random state for security
     });
     return `${baseUrl}?${queryParams.toString()}`;
+  }
+
+  async handleCallback(query: QuickbooksOnlineCallbackDto): Promise<void> {
+    return;
   }
 }

@@ -37,5 +37,7 @@ export class OAuthController {
     if (!service) {
       throw new NotFoundException('Integration not found');
     }
+
+    return service.handleCallback(query);
   }
 }

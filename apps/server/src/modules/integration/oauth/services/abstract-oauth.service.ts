@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export abstract class AbstractOAuthService {
+export abstract class AbstractOAuthService<T> {
   /**
    * Integration name (e.g., 'qbo', 'xero')
    */
@@ -18,4 +18,6 @@ export abstract class AbstractOAuthService {
    * This should be implemented by each integration
    */
   abstract getAuthorizationUrl(): string;
+
+  abstract handleCallback(query: T): Promise<void>;
 }
