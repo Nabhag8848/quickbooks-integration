@@ -1,14 +1,28 @@
 import { AbstractOAuthService } from '@/modules/integration/oauth/services/abstract-oauth.service';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { QuickbooksOnlineCallbackDto } from '@/modules/integration/quickbooks-online/dtos';
-
+import {
+  QuickbooksOnlineCallbackDto,
+  QuickbooksOnlineResponseDto,
+} from '@/modules/integration/quickbooks-online/dtos';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class QuickbooksOnlineOAuthService
-  extends AbstractOAuthService<QuickbooksOnlineCallbackDto>
+  extends AbstractOAuthService<
+    QuickbooksOnlineCallbackDto,
+    QuickbooksOnlineResponseDto
+  >
   implements OnModuleInit
 {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService
+  ) {
     super();
   }
 
@@ -17,6 +31,7 @@ export class QuickbooksOnlineOAuthService
   private clientSecret: string;
   private redirectUri: string;
   private authorizationEndpoint: string;
+  private tokenEndpoint: string;
 
   async onModuleInit() {
     const clientId = this.configService.get<string>('QBO_CLIENT_ID');
@@ -29,13 +44,17 @@ export class QuickbooksOnlineOAuthService
     const authorizationEndpoint = this.configService.get<string>(
       'QBO_AUTHORIZATION_ENDPOINT'
     );
+    const tokenEndpoint = this.configService.get<string>(
+      'QBO_AUTHORIZATION_TOKEN_ENDPOINT'
+    );
 
     if (
       !clientId ||
       !clientSecret ||
       !serverUrl ||
       !redirectUri ||
-      !authorizationEndpoint
+      !authorizationEndpoint ||
+      !tokenEndpoint
     ) {
       throw new Error(
         [
@@ -45,6 +64,7 @@ export class QuickbooksOnlineOAuthService
           `SERVER_URL: ${serverUrl}`,
           `QBO_REDIRECT_URI_PATH: ${redirectPath}`,
           `QBO_AUTHORIZATION_ENDPOINT: ${authorizationEndpoint}`,
+          `QBO_AUTHORIZATION_TOKEN_ENDPOINT: ${tokenEndpoint}`,
         ].join('\n')
       );
     }
@@ -53,6 +73,7 @@ export class QuickbooksOnlineOAuthService
     this.clientSecret = clientSecret;
     this.redirectUri = redirectUri;
     this.authorizationEndpoint = authorizationEndpoint;
+    this.tokenEndpoint = tokenEndpoint;
   }
 
   protected getAuthorizationEndpoint(): string {
@@ -71,7 +92,48 @@ export class QuickbooksOnlineOAuthService
     return `${baseUrl}?${queryParams.toString()}`;
   }
 
+  protected async exchangeCodeForToken(
+    code: string
+  ): Promise<QuickbooksOnlineResponseDto> {
+    const credentials = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString('base64');
+
+    const Authorization = `Basic ${credentials}`;
+
+    // Create URL-encoded form data
+    const formData = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: this.redirectUri,
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<QuickbooksOnlineResponseDto>(
+          this.tokenEndpoint,
+          formData.toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Accept: 'application/json',
+              Authorization,
+            },
+          }
+        )
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(
+        'QuickBooks Online token exchange failed '
+      );
+    }
+  }
+
   async handleCallback(query: QuickbooksOnlineCallbackDto): Promise<void> {
-    return;
+    const { code } = query;
+    const response = await this.exchangeCodeForToken(code);
   }
 }

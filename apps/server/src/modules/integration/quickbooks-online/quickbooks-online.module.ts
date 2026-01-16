@@ -1,8 +1,10 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { OAuthRegistryService } from '../oauth/registry/oauth.registry';
 import { QuickbooksOnlineOAuthService } from './services/quickbooks-online-oauth.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
+  imports: [HttpModule],
   providers: [QuickbooksOnlineOAuthService],
   exports: [QuickbooksOnlineOAuthService],
 })
