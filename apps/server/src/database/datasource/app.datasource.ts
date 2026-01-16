@@ -2,6 +2,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { join } from 'path';
 import { config } from 'dotenv';
+import * as entities from '../entities';
 
 config();
 
@@ -17,7 +18,7 @@ const getBaseConfig = () => ({
   migrationsRun: false,
   ssl: process.env.NODE_ENV === 'production' ? true : false,
   extra: {
-    options: '-c search_path=public,core',
+    options: '-c search_path=public,integration',
     ssl:
       process.env.NODE_ENV === 'production'
         ? { rejectUnauthorized: false }
@@ -29,7 +30,7 @@ const getBaseConfig = () => ({
 // For NestJS runtime - use explicit entity imports (webpack compatible)
 export const createTypeOrmOptions = (): TypeOrmModuleOptions => ({
   ...getBaseConfig(),
-  entities: [],
+  entities: Object.values(entities),
 });
 
 // For TypeORM CLI - use glob patterns (works with ts-node)
