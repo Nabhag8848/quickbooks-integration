@@ -13,8 +13,8 @@ export class AppController {
   @Get()
   getHomePage(@Res() res: Response) {
     // In webpack bundle, __dirname points to dist root
-    // Views are copied to dist/views by webpack
-    const htmlPath = join(__dirname, 'views', 'index.html');
+    // Public files are copied to dist/public by webpack
+    const htmlPath = join(__dirname, 'public', 'index.html');
     const html = readFileSync(htmlPath, 'utf-8');
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
