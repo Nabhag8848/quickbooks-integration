@@ -17,5 +17,5 @@ export abstract class AbstractOAuthService {
    * Generate the full authorization URL with query parameters
    * This should be implemented by each integration
    */
-  abstract getAuthorizationUrl(): string | Promise<string>;
+  abstract getAuthorizationUrl(): string;
 }
