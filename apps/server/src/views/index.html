@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuickBooks Integration</title>
+    <link rel="stylesheet" href="/v1/assets/styles.css" />
+  </head>
+  <body>
+    <h1>QuickBooks Integration</h1>
+    <p class="subtitle">Manage your QuickBooks company connections</p>
+
+    <div class="section">
+      <h2 class="section-title">Connected Companies</h2>
+      <div class="companies-list" id="companiesList">
+        <div class="empty-state">
+          <p>No companies connected yet</p>
+        </div>
+      </div>
+
+      <a href="/v1/oauth/authorize/qbo" class="btn btn-connect">
+        Connect New Company
+      </a>
+    </div>
+  </body>
+</html>

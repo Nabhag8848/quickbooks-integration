@@ -1,11 +1,24 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
+import type { Response } from 'express';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @ApiTags('health')
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHomePage(@Res() res: Response) {
+    // In webpack bundle, __dirname points to dist root
+    // Views are copied to dist/views by webpack
+    const htmlPath = join(__dirname, 'views', 'index.html');
+    const html = readFileSync(htmlPath, 'utf-8');
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
 
   @Get('health')
   @ApiOperation({

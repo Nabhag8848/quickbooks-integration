@@ -12,6 +12,7 @@ import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -22,7 +23,9 @@ async function bootstrap() {
   app.use(helmet());
 
   const globalPrefix = 'v1';
-  app.setGlobalPrefix(globalPrefix);
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: ['/'],
+  });
 
   // Swagger Configuration
   const serverUrl = configService.get<string>('SERVER_URL');
@@ -49,6 +52,12 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  // Serve static assets (CSS, JS, images, etc.)
+  app.useStaticAssets(join(__dirname, 'assets'), {
+    prefix: '/v1/assets/',
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
