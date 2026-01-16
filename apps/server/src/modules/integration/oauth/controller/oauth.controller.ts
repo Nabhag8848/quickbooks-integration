@@ -8,10 +8,14 @@ import {
 } from '@nestjs/common';
 import { OAuthRegistryService } from '@/modules/integration/oauth/registry/oauth.registry';
 import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('oauth')
 export class OAuthController {
-  constructor(private readonly registry: OAuthRegistryService) {}
+  constructor(
+    private readonly registry: OAuthRegistryService,
+    private readonly configService: ConfigService
+  ) {}
 
   @Get('authorize/:integration')
   async authorize(
@@ -30,7 +34,8 @@ export class OAuthController {
   @Get('callback/:integration')
   async callback(
     @Param('integration') integration: string,
-    @Query() query: Record<string, string>
+    @Query() query: Record<string, string>,
+    @Res() res: Response
   ) {
     const service = this.registry.getService(integration);
 
@@ -38,6 +43,8 @@ export class OAuthController {
       throw new NotFoundException('Integration not found');
     }
 
-    return service.handleCallback(query);
+    await service.handleCallback(query);
+    // TODO: SET COOKIE FOR THE USER
+    res.redirect(`${this.configService.get<string>('SERVER_URL')}`);
   }
 }

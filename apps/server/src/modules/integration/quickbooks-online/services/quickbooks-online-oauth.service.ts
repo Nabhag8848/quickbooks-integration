@@ -134,6 +134,6 @@ export class QuickbooksOnlineOAuthService
 
   async handleCallback(query: QuickbooksOnlineCallbackDto): Promise<void> {
     const { code } = query;
-    const response = await this.exchangeCodeForToken(code);
+    await this.exchangeCodeForToken(code);
   }
 }
