@@ -52,13 +52,13 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "@integration/server:build",
-        "command": "nodemon --watch src --ext ts --ignore 'src/**/*.spec.ts' --exec \"node dist/main.js\"",
+        "command": "nodemon --watch src --ext ts --ignore 'src/**/*.spec.ts' --exec \"nx run @integration/server:build:development && node dist/main.js\"",
         "cwd": "apps/server"
       },
       "configurations": {
         "development": {
           "buildTarget": "@integration/server:build:development",
-          "command": "nodemon --watch src --ext ts --ignore 'src/**/*.spec.ts' --exec \"node dist/main.js\""
+          "command": "nodemon --watch src --ext ts --ignore 'src/**/*.spec.ts' --exec \"nx run @integration/server:build:development && node dist/main.js\""
         },
         "production": {
           "buildTarget": "@integration/server:build:production",
