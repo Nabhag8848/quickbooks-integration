@@ -11,6 +11,8 @@ import {
 } from '@/modules/integration/quickbooks-online/dtos';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { OAuthResponseDto } from '@/modules/integration/oauth/dtos';
+import { calculateExpirationDate } from '@/utils';
 @Injectable()
 export class QuickbooksOnlineOAuthService
   extends AbstractOAuthService<
@@ -119,21 +121,34 @@ export class QuickbooksOnlineOAuthService
               Accept: 'application/json',
               Authorization,
             },
+            timeout: 30000,
           }
         )
       );
 
       return response.data;
     } catch (error) {
-      console.error(error);
+      console.error('QuickBooks OAuth token exchange error:', error);
       throw new InternalServerErrorException(
-        'QuickBooks Online token exchange failed '
+        `QuickBooks Online token exchange failed`
       );
     }
   }
 
-  async handleCallback(query: QuickbooksOnlineCallbackDto): Promise<void> {
+  async handleCallback(
+    query: QuickbooksOnlineCallbackDto
+  ): Promise<OAuthResponseDto> {
     const { code } = query;
-    await this.exchangeCodeForToken(code);
+    const response = await this.exchangeCodeForToken(code);
+
+    return {
+      sourceId: query.realmId,
+      accessToken: response.access_token,
+      refreshToken: response.refresh_token,
+      accessTokenExpiresAt: calculateExpirationDate(response.expires_in),
+      refreshTokenExpiresAt: calculateExpirationDate(
+        response.x_refresh_token_expires_in
+      ),
+    };
   }
 }

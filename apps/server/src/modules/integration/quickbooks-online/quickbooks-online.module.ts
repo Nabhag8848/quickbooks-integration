@@ -4,7 +4,12 @@ import { QuickbooksOnlineOAuthService } from './services/quickbooks-online-oauth
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [HttpModule],
+  imports: [
+    HttpModule.register({
+      timeout: 30000,
+      maxRedirects: 5,
+    }),
+  ],
   providers: [QuickbooksOnlineOAuthService],
   exports: [QuickbooksOnlineOAuthService],
 })
