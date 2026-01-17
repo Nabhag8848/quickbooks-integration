@@ -18,6 +18,8 @@ export class CompanyController {
     description: 'List of companies',
     type: [CompanyEntity],
   })
+
+  // TODO: Not Ideal to return array without json response.
   async getAllCompanies(): Promise<CompanyEntity[]> {
     return this.companyService.findAll();
   }
