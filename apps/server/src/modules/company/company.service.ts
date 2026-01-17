@@ -1,5 +1,5 @@
 import { CompanyEntity } from '@/database/entities';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UpsertCompanyDto } from './dtos';
@@ -24,5 +24,22 @@ export class CompanyService {
         createdAt: 'DESC',
       },
     });
+  }
+
+  async getRefreshTokenBySourceId(sourceId: string): Promise<string> {
+    const company = await this.companyRepository.findOneOrFail({
+      where: {
+        sourceId,
+      },
+      select: {
+        refreshToken: true,
+      }
+    });
+
+    if (!company.refreshToken) {
+      throw new NotFoundException(`Refresh token not found for sourceId: ${sourceId}`);
+    }
+
+    return company.refreshToken;
   }
 }

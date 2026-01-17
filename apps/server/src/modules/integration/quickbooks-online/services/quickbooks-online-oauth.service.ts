@@ -13,6 +13,9 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { OAuthResponseDto } from '@/modules/integration/oauth/dtos';
 import { calculateExpirationDate } from '@/utils';
+import { RedisService } from '@/database/redis';
+import { CompanyService } from '@/modules/company/company.service';
+import { AccessTokenRefreshService } from '../../oauth/services/access-token-refresh.service';
 @Injectable()
 export class QuickbooksOnlineOAuthService
   extends AbstractOAuthService<
@@ -23,7 +26,10 @@ export class QuickbooksOnlineOAuthService
 {
   constructor(
     private readonly configService: ConfigService,
-    private readonly httpService: HttpService
+    private readonly httpService: HttpService,
+    private readonly redisService: RedisService, 
+    private readonly companyService: CompanyService,
+    private readonly accessTokenRefreshService: AccessTokenRefreshService
   ) {
     super();
   }
@@ -76,6 +82,8 @@ export class QuickbooksOnlineOAuthService
     this.redirectUri = redirectUri;
     this.authorizationEndpoint = authorizationEndpoint;
     this.tokenEndpoint = tokenEndpoint;
+
+    await this.listenForTokenExpiry();
   }
 
   protected getAuthorizationEndpoint(): string {
@@ -121,7 +129,6 @@ export class QuickbooksOnlineOAuthService
               Accept: 'application/json',
               Authorization,
             },
-            timeout: 30000,
           }
         )
       );
@@ -150,5 +157,66 @@ export class QuickbooksOnlineOAuthService
         response.x_refresh_token_expires_in
       ),
     };
+  }
+
+  async listenForTokenExpiry(): Promise<void> {
+    const subscriber = this.redisService.getSubscriber();
+
+    await subscriber.psubscribe(`__keyspace@0__:oauth:${this.name}:*`);
+
+    subscriber.on('pmessage', async (_pattern, channel) => {  
+      const parts = channel.split(':');
+      const sourceId = parts[parts.length - 1];
+
+      const refreshToken = await this.companyService.getRefreshTokenBySourceId(sourceId);
+      const response = await this.refreshAccessToken(refreshToken);
+      const company = {
+        sourceId,
+        accessToken: response.access_token,
+        refreshToken: response.refresh_token,
+        accessTokenExpiresAt: calculateExpirationDate(response.expires_in),
+        refreshTokenExpiresAt: calculateExpirationDate(response.x_refresh_token_expires_in),
+      }
+      await Promise.all([
+        this.companyService.upsertCompany(company),
+        this.accessTokenRefreshService.setOAuthResponseWithExpiry(this.name, company),
+      ]);
+    });
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<QuickbooksOnlineResponseDto> {
+    const credentials = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString('base64');
+
+    const Authorization = `Basic ${credentials}`;
+
+    const formData = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<QuickbooksOnlineResponseDto>(
+          this.tokenEndpoint,
+          formData.toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Accept: 'application/json',
+              Authorization,
+            },
+          }
+        )
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('QuickBooks OAuth token refresh error:', error);
+      throw new InternalServerErrorException(
+        `QuickBooks Online token refresh failed`
+      );
+    }
   }
 }

@@ -10,13 +10,15 @@ import { OAuthRegistryService } from '@/modules/integration/oauth/registry/oauth
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { CompanyService } from '@/modules/company/company.service';
+import { AccessTokenRefreshService } from '@/modules/integration/oauth/services/access-token-refresh.service';
 
 @Controller('oauth')
 export class OAuthController {
   constructor(
     private readonly registry: OAuthRegistryService,
     private readonly configService: ConfigService,
-    private readonly companyService: CompanyService
+    private readonly companyService: CompanyService,
+    private readonly accessTokenRefreshService: AccessTokenRefreshService
   ) {}
 
   @Get('authorize/:integration')
@@ -46,7 +48,11 @@ export class OAuthController {
     }
 
     const company = await service.handleCallback(query);
-    await this.companyService.upsertCompany(company);
+    
+    await Promise.all([
+      this.companyService.upsertCompany(company), 
+      this.accessTokenRefreshService.setOAuthResponseWithExpiry(integration, company),
+    ]);
 
     return res.redirect(`${this.configService.get<string>('SERVER_URL')}`);
   }

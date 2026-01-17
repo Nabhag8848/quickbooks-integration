@@ -34,4 +34,17 @@ export abstract class AbstractOAuthService<T, R> {
    * This should be implemented by each integration
    */
   abstract handleCallback(query: T): Promise<OAuthResponseDto>;
+
+  /**
+   * This should be implemented by each integration
+   * This will be used to listen for token expiry and refresh the token
+   */
+  protected abstract listenForTokenExpiry(): Promise<void>;
+
+  /**
+   * Refresh the access token
+   * @param refreshToken - The refresh token of the company
+   * @returns The refreshed response with type R
+   */
+  protected abstract refreshAccessToken(refreshToken: string): Promise<R>;
 }
