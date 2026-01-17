@@ -1,5 +1,5 @@
 import { Module, OnModuleInit } from '@nestjs/common';
-import { OAuthRegistryService } from '../oauth/registry/oauth.registry';
+import { OAuthRegistryService } from '@/modules/integration/oauth/registry/oauth.registry';
 import { QuickbooksOnlineOAuthService } from './services/quickbooks-online-oauth.service';
 import { HttpModule } from '@nestjs/axios';
 import { RedisModule } from '@/database/redis';

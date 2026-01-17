@@ -15,7 +15,7 @@ import { OAuthResponseDto } from '@/modules/integration/oauth/dtos';
 import { calculateExpirationDate } from '@/utils';
 import { RedisService } from '@/database/redis';
 import { CompanyService } from '@/modules/company/company.service';
-import { AccessTokenRefreshService } from '../../oauth/services/access-token-refresh.service';
+import { AccessTokenRefreshService } from '@/modules/integration/oauth/services/access-token-refresh.service';
 @Injectable()
 export class QuickbooksOnlineOAuthService
   extends AbstractOAuthService<
