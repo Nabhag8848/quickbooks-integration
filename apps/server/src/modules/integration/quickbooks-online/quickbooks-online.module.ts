@@ -15,6 +15,9 @@ import { BullModule } from '@nestjs/bullmq';
     BullModule.registerQueue({
       name: 'sync-backfill',
     }),
+    BullModule.registerQueue({
+      name: 'sync-incremental',
+    }),
     HttpModule,
     RedisModule,
     CompanyModule,

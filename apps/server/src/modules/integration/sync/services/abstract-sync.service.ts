@@ -18,6 +18,14 @@ export abstract class AbstractSyncService {
   abstract handleSync(companySourceId: string): Promise<void>;
 
   /**
+   * Start the incremental sync for the given company source ID and object type
+   * @param companySourceId - The company source ID
+   * @param objectType - The object type
+   * @returns A promise that resolves
+   */
+  abstract startIncrementalSync(companySourceId: string, objectType: SyncObjectType): Promise<void>;
+
+  /**
    * The object type handlers for the integration
    */
   protected abstract objectTypeHandlers: Map<

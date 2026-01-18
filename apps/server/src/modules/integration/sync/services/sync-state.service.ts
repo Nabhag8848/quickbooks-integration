@@ -49,12 +49,6 @@ export class SyncStateService {
             throw new Error(`Sync state not found for company ${companySourceId} and object type ${objectType}`);
         }
 
-        if (syncState.status !== SyncStatus.PENDING) {
-            throw new Error(
-                `Cannot mark as in progress. Current status is ${syncState.status}, expected PENDING`
-            );
-        }
-
         const initialAttemptTime = new Date();
         await this.syncStateRepository.update(
             {
@@ -117,6 +111,39 @@ export class SyncStateService {
             },
             {
                 status: SyncStatus.FAILED,
+            }
+        );
+    }
+
+    async markIncrementalSyncInProgress(
+        companySourceId: string,
+        objectType: SyncObjectType
+    ): Promise<void> {
+        await this.syncStateRepository.update(
+        {
+            companySourceId,
+            objectType,
+        },
+        {
+            status: SyncStatus.IN_PROGRESS,
+            lastAttemptTime: new Date(),
+        }
+       );
+    }
+
+    async markIncrementalSyncCompleted(
+        companySourceId: string,
+        objectType: SyncObjectType,
+        lastAttemptTime?: Date
+    ): Promise<void> {
+        await this.syncStateRepository.update(
+            {
+                companySourceId,
+                objectType,
+            },
+            {
+                status: SyncStatus.COMPLETED,
+                lastSuccessfulSyncTime: lastAttemptTime,
             }
         );
     }

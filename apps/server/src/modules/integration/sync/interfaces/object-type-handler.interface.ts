@@ -12,6 +12,8 @@ export interface IObjectTypeHandler<T = unknown> {
   fetchPage(
     context: SyncContextDto,
     startPosition: number,
+    pageSize: number,
+    filter?: string,
   ): Promise<PaginatedResponseDto<T>>;
 
   /**

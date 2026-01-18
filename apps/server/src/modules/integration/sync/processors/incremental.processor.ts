@@ -9,10 +9,9 @@ import { expand, concatMap, finalize } from "rxjs/operators";
 import { SyncStateService } from "@/modules/integration/sync/services/sync-state.service";
 import { IObjectTypeHandler } from "@/modules/integration/sync/interfaces/object-type-handler.interface";
 import { SyncObjectType } from "@/utils";
-import { AbstractSyncService } from "@/modules/integration/sync/services/abstract-sync.service";
 
-@Processor('sync-backfill')
-export class BackfillProcessor extends WorkerHost {
+@Processor('sync-incremental')
+export class IncrementalProcessor extends WorkerHost {
     constructor(
         private readonly syncRegistryService: SyncRegistryService,
         private readonly companyService: CompanyService,
@@ -45,25 +44,37 @@ export class BackfillProcessor extends WorkerHost {
         const syncConfig = syncService.getSyncConfig();
         const pageSize = syncConfig.pageSize;
 
-        await this.syncStateService.markInitialBackfillInProgress(companySourceId, objectType);
-        
-        await this.startInitialBackfill(
+        await this.syncStateService.markIncrementalSyncInProgress(companySourceId, objectType);
+
+        const syncState = await this.syncStateService.getSyncState(companySourceId, objectType);
+
+        if (!syncState) {
+            throw new Error(`Sync state not found for company ${companySourceId} and object type ${objectType}`);
+        }
+
+        const lastSuccessfulSyncTime = syncState.lastSuccessfulSyncTime;
+        const lastAttemptTime = syncState.lastAttemptTime;
+        const filter = lastSuccessfulSyncTime ? `Metadata.lastUpdatedTime >= '${lastSuccessfulSyncTime.toISOString()}'` : undefined;
+
+        await this.startIncrementalSync(
             objectTypeHandler,
             syncContext,
             pageSize,
             companySourceId,
             objectType,
-            syncService
+            lastAttemptTime,
+            filter
         );
     }
 
-    private async startInitialBackfill(
+    private async startIncrementalSync(
         objectTypeHandler: IObjectTypeHandler,
         syncContext: SyncContextDto,
         pageSize: number,
         companySourceId: string,
         objectType: SyncObjectType,
-        syncService: AbstractSyncService
+        lastAttemptTime?: Date,
+        filter?: string
     ): Promise<void> {
         // Use RxJS for pagination - start from position 1
         // Mark as completed when observable finishes successfully
@@ -72,7 +83,7 @@ export class BackfillProcessor extends WorkerHost {
                 expand((startPosition) => {
                     // Fetch a page
                     return from(
-                        objectTypeHandler.fetchPage(syncContext, startPosition, pageSize)
+                        objectTypeHandler.fetchPage(syncContext, startPosition, pageSize, filter)
                     ).pipe(
                         concatMap(async (response) => {
                             // Save entities to database
@@ -95,8 +106,7 @@ export class BackfillProcessor extends WorkerHost {
                             return EMPTY;
                         }),
                         finalize(async () => {
-                            await this.syncStateService.markInitialBackfillCompleted(companySourceId, objectType);
-                            await syncService.startIncrementalSync(companySourceId, objectType);
+                            await this.syncStateService.markIncrementalSyncCompleted(companySourceId, objectType, lastAttemptTime);
                         })
                     );
                 })

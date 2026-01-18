@@ -27,11 +27,13 @@ export abstract class QuickBooksBaseHandler<T> implements IObjectTypeHandler<T> 
     async fetchPage(
       context: SyncContextDto,
       startPosition: number,
+      pageSize: number,
+      filter?: string,
     ): Promise<PaginatedResponseDto<T>> {
         const url = `${this.baseUrl}/v3/company/${context.companySourceId}/query`;
         const entityName = this.getEntityName();
     
-        const query = `SELECT * FROM ${entityName} ORDERBY Metadata.CreateTime ASC STARTPOSITION ${startPosition} MAXRESULTS 1000`;
+        const query = `SELECT * FROM ${entityName}${filter ? ` WHERE ${filter} ` : ' '}ORDERBY Metadata.CreateTime ASC STARTPOSITION ${startPosition} MAXRESULTS ${pageSize}`;
     
         const response = await firstValueFrom(this.httpService
           .get<QuickBooksQueryResponse<typeof entityName>>(url, {
@@ -51,6 +53,16 @@ export abstract class QuickBooksBaseHandler<T> implements IObjectTypeHandler<T> 
         const entities = data[entityName] || [];
         const maxResults = data.maxResults || 1000;
         const currentStart = data.startPosition || startPosition;
+
+        console.log({
+          context,
+          startPosition,
+          pageSize,
+          filter,
+          entities,
+          maxResults,
+          currentStart,
+        })
     
         return {
           items: entities as T[],

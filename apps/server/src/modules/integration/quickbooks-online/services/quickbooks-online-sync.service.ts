@@ -20,6 +20,7 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
 
     constructor(
       @InjectQueue('sync-backfill') private readonly backfillQueue: Queue<SyncJobDataDto>,
+      @InjectQueue('sync-incremental') private readonly incrementalQueue: Queue<SyncJobDataDto>,
       private readonly configService: ConfigService,
       private readonly httpService: HttpService,
       private readonly customerService: CustomerService,
@@ -71,6 +72,33 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
       
     }
 
+    async startIncrementalSync(companySourceId: string, objectType: SyncObjectType): Promise<void> {
+      const integrationName = this.name;
+      const objectTypePriority  = this.getObjectTypes().find(o => o.objectType === objectType);
+      const syncConfig = this.getSyncConfig();
+
+      if (!objectTypePriority) {
+        throw new Error(`Object type priority not found for ${objectType}`);
+      }
+
+      const key = `${this.name}:incremental:${companySourceId}:${objectType}`;
+      await this.incrementalQueue.add(key, {
+        integrationName,
+        companySourceId,
+        objectType,
+      }, {
+        priority: objectTypePriority.priority,
+        repeat: {
+          every: syncConfig.incrementalSyncIntervalMs,
+        },
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        attempts: 3,
+      });
+    }
+
 
     private async addToBackfillQueue(companySourceId: string, objectType: SyncObjectType, integrationName: string, priority: number): Promise<void> {
       const key = `${integrationName}:backfill:${companySourceId}:${objectType}`;
@@ -80,6 +108,11 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
         objectType,
       }, {
         priority,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        attempts: 3,
       });
     }
 
