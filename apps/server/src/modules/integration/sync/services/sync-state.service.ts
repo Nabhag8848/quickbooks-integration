@@ -6,4 +6,5 @@ import { SyncStateEntity } from "@/database/entities/integration/sync-state.enti
 @Injectable()
 export class SyncStateService {
     constructor(@InjectRepository(SyncStateEntity) private readonly syncStateRepository: Repository<SyncStateEntity>) {}
+
 }

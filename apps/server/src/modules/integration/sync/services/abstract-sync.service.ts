@@ -7,5 +7,5 @@ export abstract class AbstractSyncService {
    */
   abstract readonly name: string;
 
-  abstract handleSync(): Promise<void>;
+  abstract handleSync(companySourceId: string): Promise<void>;
 }

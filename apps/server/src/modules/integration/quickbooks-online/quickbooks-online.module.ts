@@ -6,9 +6,13 @@ import { RedisModule } from '@/database/redis';
 import { CompanyModule } from '@/modules/company/company.module';
 import { SyncRegistryService } from '@/modules/integration/sync/registry/sync.registry';
 import { QuickbooksOnlineSyncService } from './services/quickbooks-online-sync.service';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
+    BullModule.registerQueue({
+      name: 'sync-backfill',
+    }),
     HttpModule,
     RedisModule,
     CompanyModule,

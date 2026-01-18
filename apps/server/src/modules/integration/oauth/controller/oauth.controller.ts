@@ -62,7 +62,7 @@ export class OAuthController {
       throw new NotFoundException('Sync service not found');
     }
 
-    await syncService.handleSync();
+    await syncService.handleSync(company.sourceId);
 
     return res.redirect(`${this.configService.get<string>('SERVER_URL')}`);
   }
