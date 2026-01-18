@@ -1,5 +1,7 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { AbstractBaseEntity } from '../base.entity';
+import { CustomerEntity } from './customer.entity';
+import { InvoiceEntity } from './invoice.entity';
 
 @Entity({ name: 'company', schema: 'integration' })
 export class CompanyEntity extends AbstractBaseEntity {
@@ -24,4 +26,10 @@ export class CompanyEntity extends AbstractBaseEntity {
     nullable: true,
   })
   refreshTokenExpiresAt?: Date;
+
+  @OneToMany(() => CustomerEntity, (customer) => customer.company)
+  customers: CustomerEntity[];
+
+  @OneToMany(() => InvoiceEntity, (invoice) => invoice.company)
+  invoices?: InvoiceEntity[];
 }
