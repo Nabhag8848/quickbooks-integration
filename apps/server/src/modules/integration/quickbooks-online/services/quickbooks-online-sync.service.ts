@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { IObjectTypeHandler } from '@/modules/integration/sync/interfaces';
 import { HttpService } from '@nestjs/axios';
 import { QuickbooksCustomerHandler, QuickbooksInvoiceHandler } from '@/modules/integration/quickbooks-online/handler';
+import { CustomerService } from '@/modules/customer/customer.service';
+import { InvoiceService } from '@/modules/invoice/invoice.service';
 
 @Injectable()
 export class QuickbooksOnlineSyncService extends AbstractSyncService implements OnModuleInit {
@@ -18,6 +20,8 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
       @InjectQueue('sync-backfill') private readonly backfillQueue: Queue<SyncJobDataDto>,
       private readonly configService: ConfigService,
       private readonly httpService: HttpService,
+      private readonly customerService: CustomerService,
+      private readonly invoiceService: InvoiceService,
     ) {
       super()
     }
@@ -28,8 +32,8 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
         throw new Error('QBO_API_BASE_URL is not set');
       }
       this.baseUrl = baseUrl;
-      this.objectTypeHandlers.set(SyncObjectType.CUSTOMER, new QuickbooksCustomerHandler(this.httpService, this.baseUrl));
-      this.objectTypeHandlers.set(SyncObjectType.INVOICE, new QuickbooksInvoiceHandler(this.httpService, this.baseUrl));
+      this.objectTypeHandlers.set(SyncObjectType.CUSTOMER, new QuickbooksCustomerHandler(this.httpService, this.baseUrl, this.customerService));
+      this.objectTypeHandlers.set(SyncObjectType.INVOICE, new QuickbooksInvoiceHandler(this.httpService, this.baseUrl, this.invoiceService));
     }
 
     readonly name = 'qbo';
