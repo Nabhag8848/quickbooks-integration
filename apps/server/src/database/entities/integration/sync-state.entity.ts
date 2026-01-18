@@ -1,19 +1,7 @@
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { AbstractBaseEntity } from '../base.entity';
 import { CompanyEntity } from './company.entity';
-
-enum SyncObjectType {
-  CUSTOMER = 'customer',
-  INVOICE = 'invoice',
-}
-
-enum SyncStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  PAUSED = 'paused',
-}
+import { SyncObjectType, SyncStatus } from '@/utils';
 
 @Entity({ name: 'sync_state', schema: 'integration' })
 @Index(['companySourceId', 'objectType'], { unique: true })
@@ -51,4 +39,7 @@ export class SyncStateEntity extends AbstractBaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   lastSuccessfulSyncTime?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastSyncMostRecentSourceCreatedAtTime?: Date;
 }

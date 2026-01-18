@@ -11,11 +11,13 @@ import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { CompanyService } from '@/modules/company/company.service';
 import { AccessTokenRefreshService } from '@/modules/integration/oauth/services/access-token-refresh.service';
+import { SyncRegistryService } from '@/modules/integration/sync/registry/sync.registry';
 
 @Controller('oauth')
 export class OAuthController {
   constructor(
-    private readonly registry: OAuthRegistryService,
+    private readonly oauthRegistryService: OAuthRegistryService,
+    private readonly syncRegistryService: SyncRegistryService,
     private readonly configService: ConfigService,
     private readonly companyService: CompanyService,
     private readonly accessTokenRefreshService: AccessTokenRefreshService
@@ -26,13 +28,13 @@ export class OAuthController {
     @Param('integration') integration: string,
     @Res() res: Response
   ) {
-    const service = this.registry.getService(integration);
+    const oauthService = this.oauthRegistryService.getService(integration);
 
-    if (!service) {
+    if (!oauthService) {
       throw new NotFoundException('Integration not found');
     }
 
-    return res.redirect(service.getAuthorizationUrl());
+    return res.redirect(oauthService.getAuthorizationUrl());
   }
 
   @Get('callback/:integration')
@@ -41,18 +43,26 @@ export class OAuthController {
     @Query() query: Record<string, string>,
     @Res() res: Response
   ) {
-    const service = this.registry.getService(integration);
+    const oauthService = this.oauthRegistryService.getService(integration);
 
-    if (!service) {
+    if (!oauthService) {
       throw new NotFoundException('Integration not found');
     }
 
-    const company = await service.handleCallback(query);
+    const company = await oauthService.handleCallback(query);
     
     await Promise.all([
       this.companyService.upsertCompany(company), 
       this.accessTokenRefreshService.setOAuthResponseWithExpiry(integration, company),
     ]);
+
+    const syncService = this.syncRegistryService.getService(integration);
+
+    if (!syncService) {
+      throw new NotFoundException('Sync service not found');
+    }
+
+    await syncService.handleSync();
 
     return res.redirect(`${this.configService.get<string>('SERVER_URL')}`);
   }

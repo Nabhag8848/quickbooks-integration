@@ -4,6 +4,8 @@ import { QuickbooksOnlineOAuthService } from './services/quickbooks-online-oauth
 import { HttpModule } from '@nestjs/axios';
 import { RedisModule } from '@/database/redis';
 import { CompanyModule } from '@/modules/company/company.module';
+import { SyncRegistryService } from '@/modules/integration/sync/registry/sync.registry';
+import { QuickbooksOnlineSyncService } from './services/quickbooks-online-sync.service';
 
 @Module({
   imports: [
@@ -11,18 +13,24 @@ import { CompanyModule } from '@/modules/company/company.module';
     RedisModule,
     CompanyModule,
   ],
-  providers: [QuickbooksOnlineOAuthService],
-  exports: [QuickbooksOnlineOAuthService],
+  providers: [QuickbooksOnlineOAuthService, QuickbooksOnlineSyncService],
+  exports: [QuickbooksOnlineOAuthService, QuickbooksOnlineSyncService],
 })
 export class QuickbooksOnlineModule implements OnModuleInit {
   constructor(
     private readonly oauthRegistryService: OAuthRegistryService,
-    private readonly quickbooksOnlineOAuthService: QuickbooksOnlineOAuthService
+    private readonly quickbooksOnlineOAuthService: QuickbooksOnlineOAuthService,
+    private readonly quickbooksOnlineSyncService: QuickbooksOnlineSyncService,
+    private readonly syncRegistryService: SyncRegistryService
   ) {}
 
   async onModuleInit() {
     this.oauthRegistryService.registerService(
       this.quickbooksOnlineOAuthService
+    );
+
+    this.syncRegistryService.registerService(
+      this.quickbooksOnlineSyncService
     );
   }
 }

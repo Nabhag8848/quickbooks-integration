@@ -46,6 +46,7 @@ erDiagram
     timestamp initialAttemptTime
     timestamp lastAttemptTime
     timestamp lastSuccessfulSyncTime
+    timestamp lastSyncMostRecentSourceCreatedAtTime
   }
   invoice }|--|| company: company
   invoice }|--|| customer: customer
