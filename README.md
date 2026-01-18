@@ -12,6 +12,13 @@ docker compose up -d
 
 Starts PostgreSQL (port 5432) and Redis (port 6379) in the background.
 
+**To reset infrastructure and clear all data Later**:
+```bash
+docker compose down -v && docker compose up -d
+```
+
+The `-v` flag removes volumes, clearing all database data and Redis queues.
+
 ### 2. Configure Environment
 
 ```bash
