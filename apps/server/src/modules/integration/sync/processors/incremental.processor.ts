@@ -54,7 +54,7 @@ export class IncrementalProcessor extends WorkerHost {
 
         const lastSuccessfulSyncTime = syncState.lastSuccessfulSyncTime;
         const lastAttemptTime = syncState.lastAttemptTime;
-        const filter = lastSuccessfulSyncTime ? `Metadata.lastUpdatedTime >= '${lastSuccessfulSyncTime.toISOString()}'` : undefined;
+        const filter = lastSuccessfulSyncTime ? `Metadata.LastUpdatedTime >= '${lastSuccessfulSyncTime.toISOString()}'` : undefined;
 
         await this.startIncrementalSync(
             objectTypeHandler,
