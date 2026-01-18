@@ -5,12 +5,14 @@ import { SyncRegistryService } from "@/modules/integration/sync/registry/sync.re
 import { CompanyService } from "@/modules/company/company.service";
 import { SyncContextDto } from "@/modules/integration/sync/dtos/sync-context.dto";
 import { from, of, lastValueFrom, EMPTY } from "rxjs";
-import { expand, concatMap } from "rxjs/operators";
+import { expand, concatMap, finalize } from "rxjs/operators";
+import { SyncStateService } from "@/modules/integration/sync/services/sync-state.service";
 @Processor('sync-backfill')
 export class BackfillProcessor extends WorkerHost {
     constructor(
         private readonly syncRegistryService: SyncRegistryService,
         private readonly companyService: CompanyService,
+        private readonly syncStateService: SyncStateService,
     ) {
         super();
     }
@@ -23,7 +25,6 @@ export class BackfillProcessor extends WorkerHost {
         }
 
         const objectTypeHandler = syncService.getObjectTypeHandler(objectType);
-        const syncConfig = syncService.getSyncConfig();
         const accessToken = await this.companyService.getAccessTokenBySourceId(companySourceId);
 
         if (!accessToken) {
@@ -36,7 +37,11 @@ export class BackfillProcessor extends WorkerHost {
             objectType,
             integrationName,
         };
+
+        await this.syncStateService.markInitialBackfillInProgress(companySourceId, objectType);
+        
         // Use RxJS for pagination - start from position 1
+        // Mark as completed when observable finishes successfully
         await lastValueFrom(
             of(1).pipe(
                 expand((startPosition) => {
@@ -63,6 +68,9 @@ export class BackfillProcessor extends WorkerHost {
 
                             // No more pages - complete the stream
                             return EMPTY;
+                        }),
+                        finalize(async () => {
+                            await this.syncStateService.markInitialBackfillCompleted(companySourceId, objectType);
                         })
                     );
                 })

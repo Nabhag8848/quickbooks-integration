@@ -11,6 +11,8 @@ import { HttpService } from '@nestjs/axios';
 import { QuickbooksCustomerHandler, QuickbooksInvoiceHandler } from '@/modules/integration/quickbooks-online/handler';
 import { CustomerService } from '@/modules/customer/customer.service';
 import { InvoiceService } from '@/modules/invoice/invoice.service';
+import { SyncStateService } from '@/modules/integration/sync/services/sync-state.service';
+import { SyncStateEntity } from '@/database/entities/integration/sync-state.entity';
 
 @Injectable()
 export class QuickbooksOnlineSyncService extends AbstractSyncService implements OnModuleInit {
@@ -22,6 +24,7 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
       private readonly httpService: HttpService,
       private readonly customerService: CustomerService,
       private readonly invoiceService: InvoiceService,
+      private readonly syncStateService: SyncStateService,
     ) {
       super()
     }
@@ -42,17 +45,42 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
     async handleSync(companySourceId: string): Promise<void> {
       const objectTypes = this.getObjectTypes();
       const integrationName = this.name;
+      const syncStates = await this.syncStateService.getSyncStatesByCompanySourceId(companySourceId);
+
+      const syncStatesMap = new Map<SyncObjectType, SyncStateEntity>();
+
+      for (const syncState of syncStates) {
+        syncStatesMap.set(syncState.objectType, syncState);
+      }
+
       for (const {objectType, priority} of objectTypes) {
-        const key = `${integrationName}:backfill:${companySourceId}:${objectType}`;
-        await this.backfillQueue.add(key, {
-          integrationName,
-          companySourceId,
-          objectType,  
-        }, {
-          priority
-        });
+
+        // check if exists in syncStatesMap, if it exists check if initialBackfillCompleted is false, if it is false then add to backfill queue
+        // if it doesn't exist in syncStatesMap, then add to backfill queue
+        if (syncStatesMap.has(objectType)) {
+
+          if(!syncStatesMap.get(objectType)?.isInitialBackfillCompleted) {
+            await this.addToBackfillQueue(companySourceId, objectType, integrationName, priority);
+          }
+        }
+        else {
+          await this.addToBackfillQueue(companySourceId, objectType, integrationName, priority);
+          await this.syncStateService.createPendingSyncState(companySourceId, objectType);
+        }
       }
       
+    }
+
+
+    private async addToBackfillQueue(companySourceId: string, objectType: SyncObjectType, integrationName: string, priority: number): Promise<void> {
+      const key = `${integrationName}:backfill:${companySourceId}:${objectType}`;
+      await this.backfillQueue.add(key, {
+        integrationName,
+        companySourceId,
+        objectType,
+      }, {
+        priority,
+      });
     }
 
     private getObjectTypes(): ObjectTypeConfigDto[] {
