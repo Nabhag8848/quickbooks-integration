@@ -42,4 +42,17 @@ export class CompanyService {
 
     return company.refreshToken;
   }
+
+  async getAccessTokenBySourceId(sourceId: string): Promise<string | undefined> {
+    const company = await this.companyRepository.findOneOrFail({
+      where: {
+        sourceId,
+      },
+      select: {
+        accessToken: true,
+      }
+    });
+
+    return company.accessToken;
+  }
 }

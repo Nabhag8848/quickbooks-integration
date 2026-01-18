@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { SyncObjectType } from "@/utils";
 import { IObjectTypeHandler } from "@/modules/integration/sync/interfaces";
+import { SyncConfigDto } from "../dtos/sync-config.dto";
 
 @Injectable()
 export abstract class AbstractSyncService {
@@ -29,11 +30,18 @@ export abstract class AbstractSyncService {
    * @param objectType - The object type
    * @returns The object type handler
    */
-  getObjectTypeHandler(objectType: SyncObjectType): IObjectTypeHandler | null {
+  getObjectTypeHandler(objectType: SyncObjectType): IObjectTypeHandler {
     const handler = this.objectTypeHandlers.get(objectType);
     if (!handler) {
       throw new Error(`Object type handler for ${objectType} not found`);
     }
     return handler;
   }
+
+  /**
+   * Get the sync config for the integration
+   * @returns The sync config
+   */
+  abstract getSyncConfig(): SyncConfigDto;
+  
 }

@@ -1,7 +1,7 @@
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { AbstractBaseEntity } from '../base.entity';
 import { CompanyEntity } from './company.entity';
-import { SyncObjectType, SyncStatus } from '@/utils';
+import { SyncObjectType, SyncStatus } from '../../../utils';
 
 @Entity({ name: 'sync_state', schema: 'integration' })
 @Index(['companySourceId', 'objectType'], { unique: true })

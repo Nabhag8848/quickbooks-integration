@@ -1,7 +1,7 @@
 import { AbstractSyncService } from '@/modules/integration/sync/services/abstract-sync.service';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import {ObjectTypeConfigDto, SyncJobDataDto} from '@/modules/integration/sync/dtos';
+import {ObjectTypeConfigDto, SyncConfigDto, SyncJobDataDto} from '@/modules/integration/sync/dtos';
 import { InjectQueue } from '@nestjs/bullmq';
 import { SyncObjectType } from '@/utils';
 import { OnModuleInit } from '@nestjs/common';
@@ -66,5 +66,16 @@ export class QuickbooksOnlineSyncService extends AbstractSyncService implements 
           priority: 2,
         },
       ]
+    }
+
+    getSyncConfig(): SyncConfigDto {
+      return {
+        pageSize: 1000,
+        rateLimitMs: 120, // 500 req/min = ~120ms between requests (not implemented yet)
+        retryAttempts: 3,
+        retryDelayMs: 1000,
+        initialBackfillDelayMs: 5000, // 5 second delay after OAuth
+        incrementalSyncIntervalMs: 5 * 60 * 1000, // 5 minutes
+      }
     }
 }
