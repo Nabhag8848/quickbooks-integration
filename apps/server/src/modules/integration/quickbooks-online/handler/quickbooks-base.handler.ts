@@ -53,17 +53,7 @@ export abstract class QuickBooksBaseHandler<T> implements IObjectTypeHandler<T> 
         const entities = data[entityName] || [];
         const maxResults = data.maxResults || 1000;
         const currentStart = data.startPosition || startPosition;
-
-        console.log({
-          context,
-          startPosition,
-          pageSize,
-          filter,
-          entities,
-          maxResults,
-          currentStart,
-        })
-    
+            
         return {
           items: entities as T[],
           hasMore: entities.length === maxResults,
