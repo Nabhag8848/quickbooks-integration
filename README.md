@@ -27,6 +27,9 @@ QBO_CLIENT_SECRET=your_client_secret
 
 Get credentials from the [Intuit Developer Portal](https://developer.intuit.com/).
 
+**Important**: Make sure you have the following redirect URI configured in your QuickBooks app:
+- `http://localhost:3000/v1/oauth/callback/qbo`
+
 ### 3. Install Dependencies
 
 ```bash
