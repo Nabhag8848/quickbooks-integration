@@ -44,7 +44,7 @@ same timestamp approach.
 - we will first get all the customer and then get all the invoices in all the cases we have in order to avoid N + 1 query.
 
 # Things thats good to handle: 
-- Multi tenancy - solves entitiy object record name match across customer [ not priority ] 
+- Multi tenancy - solves entiti=y object record name match across customer [ not priority ] 
 - Api Failure [ handle ] 
 - Token Expiration [ handle ]
 - RateLimit (500 req / min - per QBO App) [ not priority ] 

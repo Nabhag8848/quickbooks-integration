@@ -35,7 +35,20 @@ erDiagram
     text refreshToken
     timestamp refreshTokenExpiresAt
   }
+  sync_state {
+    uuid id PK
+    timestamp createdAt
+    timestamp updatedAt
+    varchar companySourceId FK
+    enum objectType
+    enum status
+    bool isInitialBackfillCompleted
+    timestamp initialAttemptTime
+    timestamp lastAttemptTime
+    timestamp lastSuccessfulSyncTime
+  }
   invoice }|--|| company: company
   invoice }|--|| customer: customer
   customer }|--|| company: company
+  sync_state }|--|| company: company
 ```
