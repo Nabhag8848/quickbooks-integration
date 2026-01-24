@@ -2,6 +2,12 @@
 
 NestJS service for syncing QuickBooks Online data with OAuth authentication and background job processing.
 
+
+
+https://github.com/user-attachments/assets/f7029f7b-5590-4685-86a6-6a2ece5fc4ea
+
+
+
 ## Local Setup
 
 ### 1. Start Infrastructure
